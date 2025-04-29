@@ -1,0 +1,16 @@
+### Post
+
+POST http://localhost:8000/api/users/signup
+Content-Type: application/json
+
+{
+    "name": "shyam",
+    "contactNumber": 123456789,
+    "address": "ACT",
+    "email": "aaa@gmail.com",
+    "password": 123
+}
+
+### Get user
+
+GET http://localhost:8000/
