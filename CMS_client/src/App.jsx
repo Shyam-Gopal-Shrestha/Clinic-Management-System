@@ -3,6 +3,7 @@ import HomePage from "./page/HomePage";
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Dashboard from "./page/Dashboard";
+import DoctorDashboard from "./page/DoctorDashboard";
 import { ToastContainer, toast } from "react-toastify";
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
         </Routes>
       </Router>
       <ToastContainer />

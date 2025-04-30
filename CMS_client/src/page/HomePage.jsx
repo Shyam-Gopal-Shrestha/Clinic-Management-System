@@ -43,33 +43,3 @@ export default function HomePage() {
     </Container>
   );
 }
-
-//  <Container fluid className="vh-100">
-//     <Row className="h-100">
-//       <Col
-//         xs={12}
-//         md={6}
-//         className="d-flex align-items-center justify-content-center bg-light"
-//       >
-//         <div>
-//           <h1>
-//             Clinic Management System
-//             <br />
-//             <img
-//               src={logo}
-//               alt="Clinic Logo"
-//               style={{ width: "250px", height: "275px" }}
-//             />
-//           </h1>
-//         </div>
-//       </Col>
-
-//       <Col
-//         xs={12}
-//         md={6}
-//         className="d-flex align-items-center justify-content-center"
-//       >
-//         <AuthPage />
-//       </Col>
-//     </Row>
-//   </Container>
