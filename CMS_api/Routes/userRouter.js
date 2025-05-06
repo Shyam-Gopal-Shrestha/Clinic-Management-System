@@ -13,20 +13,32 @@ userRouter.post("/signup", async (req, res) => {
   try {
     const { password } = req.body;
 
-    const hashedPassword = hashPassword(password);
-    // Query to db to saev user
+    // Hash the password
+    const hashedPassword = await hashPassword(password); // Ensure this is awaited
+
+    // Save the user to the database
     const result = await createUser({ ...req.body, password: hashedPassword });
 
-    result?._id
-      ? buildSuccessResponse(res, result, "user created successfully!!")
-      : buildErrorResponse(res, "could not create user!!");
-  } catch (error) {
-    if (error.code === 11000) {
-      error.message = "User with this email already exists!!";
+    // Check if the user was created successfully
+    if (result?._id) {
+      buildSuccessResponse(res, result, "User created successfully!!");
+    } else {
+      buildErrorResponse(res, "Could not create user!!");
     }
+  } catch (error) {
+    console.error("Error during user creation:", error);
+
+    // Handle duplicate email error
+    if (error.code === 11000) {
+      return buildErrorResponse(res, "User with this email already exists!!");
+    }
+
+    // Handle other errors
+    buildErrorResponse(res, "An error occurred during user creation.");
   }
 });
 
+// Login route
 // Login route
 userRouter.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -41,8 +53,15 @@ userRouter.post("/login", async (req, res) => {
     if (!isPasswordCorrect) {
       return buildErrorResponse(res, "Invalid credentials!!");
     }
-    // if login successful
-    buildSuccessResponse(res, null, "Login Successful");
+
+    // if login successful, include user role and other details in the response
+    const userData = {
+      role: user.role, // Assuming the user object has a 'role' field
+      name: user.name, // Optional: Include other user details if needed
+      email: user.email,
+    };
+
+    buildSuccessResponse(res, userData, "Login Successful");
   } catch (error) {
     console.log("error during login", error);
     buildErrorResponse(res, "Failed to login");

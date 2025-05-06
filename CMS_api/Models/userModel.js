@@ -4,6 +4,10 @@ import userSchema from "../schema/userSchema.js";
 export const createUser = (userObj) => {
   return userSchema(userObj).save();
 };
+// export const createUser = async (userData) => {
+//   const user = new User(userData);
+//   return await user.save();
+// };
 
 // find user by email
 export const findUserByEmail = (email) => {

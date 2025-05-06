@@ -1,16 +1,3 @@
-// import React, { useState } from "react";
-// import LoginForm from "./LoginForm";
-// import SignupForm from "./SignupForm";
-
-// const AuthPage = () => {
-//   const [isLoginMode, setIsLoginMode] = useState(true);
-//   return <div>
-//     {isLoginMode ? <LoginForm /> : <SignupForm />}
-//     {isLoginMode ?  : }</div>;
-// };
-
-// export default AuthPage;
-
 import React, { useState } from "react";
 import LoginForm from "./LoginForm.jsx";
 import SignupForm from "./SignupForm.jsx";

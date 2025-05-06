@@ -3,9 +3,9 @@ import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import CustomInput from "./CustomInput";
 import { createUser } from "../axios/userAxios.js";
-import { toast, ToastContainer } from "react-toastify";
 import useForm from "../hooks/useForm.js";
 import "react-toastify/dist/ReactToastify.css";
+import { toast, ToastContainer } from "react-toastify";
 
 const initialFormData = {
   name: "",
@@ -13,7 +13,7 @@ const initialFormData = {
   address: "",
   email: "",
   password: "",
-  role: "doctor", // default role selection
+  role: "Patient", // default role selection
 };
 
 const SignupForm = (props) => {
@@ -34,6 +34,7 @@ const SignupForm = (props) => {
       role,
     });
 
+    console.log("Signup API Response:", result); // Debugging: Check the API response
     if (result.status === "error") {
       toast.error(result.message || "Error occurred while creating user");
       return;
@@ -109,8 +110,9 @@ const SignupForm = (props) => {
             onChange={handleOnChange}
             required
           >
-            <option value="doctor">Doctor</option>
-            <option value="receptionist">Receptionist</option>
+            <option value="Patient">Patient</option>
+            <option value="Doctor">Doctor</option>
+            <option value="Receptionist">Receptionist</option>
           </Form.Select>
         </Form.Group>
 
