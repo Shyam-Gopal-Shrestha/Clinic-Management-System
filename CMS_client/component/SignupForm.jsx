@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import Form from "react-bootstrap/Form";
 import Button from "react-bootstrap/Button";
 import CustomInput from "./CustomInput";
@@ -13,36 +13,33 @@ const initialFormData = {
   address: "",
   email: "",
   password: "",
+  role: "doctor", // default role selection
 };
 
 const SignupForm = (props) => {
   const { setIsLoginMode } = props;
   const useFormPayLoad = useForm(initialFormData);
   const { formData, handleOnChange } = useFormPayLoad;
-  const { name, contactNumber, address, email, password } = formData;
+  const { name, contactNumber, address, email, password, role } = formData;
 
-  // handle form submission
   const handleOnSubmit = async (e) => {
-    // prevent default action of browser on events
     e.preventDefault();
 
-    // axios call
     const result = await createUser({
       name,
       contactNumber,
       address,
       email,
       password,
+      role,
     });
-    console.log("formdata: ", result);
 
     if (result.status === "error") {
       toast.error(result.message || "Error occurred while creating user");
-      console.log(result);
       return;
     }
+
     toast.success(result.message);
-    console.log(result);
     setIsLoginMode(true);
   };
 
@@ -54,7 +51,7 @@ const SignupForm = (props) => {
           inputAttributes={{
             type: "text",
             name: "name",
-            value: formData.name,
+            value: name,
             required: true,
           }}
           handleOnChange={handleOnChange}
@@ -65,7 +62,7 @@ const SignupForm = (props) => {
           inputAttributes={{
             type: "number",
             name: "contactNumber",
-            value: formData.contactNumber,
+            value: contactNumber,
             required: true,
           }}
           handleOnChange={handleOnChange}
@@ -76,7 +73,7 @@ const SignupForm = (props) => {
           inputAttributes={{
             type: "text",
             name: "address",
-            value: formData.address,
+            value: address,
             required: true,
           }}
           handleOnChange={handleOnChange}
@@ -87,7 +84,7 @@ const SignupForm = (props) => {
           inputAttributes={{
             type: "email",
             name: "email",
-            value: formData.email,
+            value: email,
             required: true,
           }}
           handleOnChange={handleOnChange}
@@ -98,11 +95,25 @@ const SignupForm = (props) => {
           inputAttributes={{
             type: "password",
             name: "password",
-            value: formData.password,
+            value: password,
             required: true,
           }}
           handleOnChange={handleOnChange}
         />
+
+        <Form.Group className="mb-3">
+          <Form.Label>Role</Form.Label>
+          <Form.Select
+            name="role"
+            value={role}
+            onChange={handleOnChange}
+            required
+          >
+            <option value="doctor">Doctor</option>
+            <option value="receptionist">Receptionist</option>
+          </Form.Select>
+        </Form.Group>
+
         <Button variant="success" type="submit" className="w-100">
           Sign up
         </Button>
