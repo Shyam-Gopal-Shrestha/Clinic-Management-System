@@ -3,6 +3,7 @@ import logo from "../assets/logo.png";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { FaBell } from "react-icons/fa"; // Import the notification icon
+import { Link } from "react-router-dom";
 
 import {
   Container,
@@ -29,29 +30,15 @@ function Dashboard() {
           backgroundColor: "#10898D",
         }}
       >
-        {/* Logo Section */}
-        {/* <Col>
-          <div
-            className="d-flex align-items-center"
-            style={{
-              backgroundColor: "#d1ecf1", // Light blue for the logo section
-              padding: "5px",
-            }}
-          >
-            <div style={{ width: "80px", height: "80px" }}>
-              <img
-                src={logo}
-                alt="Clinic Logo"
-                style={{ width: "100%", height: "100%", objectFit: "contain" }}
-              />
-            </div>
-          </div>
-        </Col> */}
         <Col>
           {/* Navbar Section */}
           <Navbar expand="lg" className="flex-grow-1 ms-3">
             <Nav className="ms-auto d-flex align-items-center">
-              <Nav.Link href="#" style={{ color: "#fff" }}>
+              <Nav.Link
+                as={Link}
+                to="/book-appointment"
+                style={{ color: "#fff" }}
+              >
                 Book Appointment
               </Nav.Link>
               <Nav.Link href="#" style={{ color: "#fff" }}>
