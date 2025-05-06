@@ -1,3 +1,4 @@
+// filepath: /path/to/userModel.js
 import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema({
@@ -11,6 +12,9 @@ const userSchema = new mongoose.Schema({
     required: true,
     enum: ["Doctor", "Patient", "Receptionist"],
   },
+  isVerified: { type: Boolean, default: false },
 });
 
-export default mongoose.model("User", userSchema);
+const User = mongoose.model("User", userSchema);
+
+export default User; // Export the Mongoose model

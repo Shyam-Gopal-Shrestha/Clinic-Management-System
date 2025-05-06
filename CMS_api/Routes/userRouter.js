@@ -11,13 +11,20 @@ const userRouter = express.Router();
 // create user | Signup Endpoint
 userRouter.post("/signup", async (req, res) => {
   try {
-    const { password } = req.body;
+    const { password, role } = req.body;
 
     // Hash the password
-    const hashedPassword = await hashPassword(password); // Ensure this is awaited
+    const hashedPassword = await hashPassword(password);
+
+    // Determine if the user should be verified by default
+    const isVerified = role === "Patient"; // Only patients are verified by default
 
     // Save the user to the database
-    const result = await createUser({ ...req.body, password: hashedPassword });
+    const result = await createUser({
+      ...req.body,
+      password: hashedPassword,
+      isVerified, // Set the isVerified field
+    });
 
     // Check if the user was created successfully
     if (result?._id) {
@@ -38,7 +45,6 @@ userRouter.post("/signup", async (req, res) => {
   }
 });
 
-// Login route
 // Login route
 userRouter.post("/login", async (req, res) => {
   const { email, password } = req.body;

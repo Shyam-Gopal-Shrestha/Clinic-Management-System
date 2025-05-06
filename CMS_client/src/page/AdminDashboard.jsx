@@ -1,66 +1,94 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import { Container, Row, Col, Table, Button } from "react-bootstrap";
+import { toast } from "react-toastify";
+import { getPendingUsers, verifyUser } from "../../axios/adminAxios";
+const AdminPage = () => {
+  const [pendingUsers, setPendingUsers] = useState([]);
 
-function AdminPage() {
-  const [users, setUsers] = useState([]);
-
+  // Fetch pending users on component mount
   useEffect(() => {
-    axios
-      .get("/api/admin/unverified-users")
-      .then((res) => setUsers(res.data))
-      .catch((err) => console.error(err));
+    const fetchPendingUsers = async () => {
+      const result = await getPendingUsers();
+      if (result.status === "error") {
+        toast.error(result.message || "Failed to fetch pending users");
+        return;
+      }
+      setPendingUsers(result.data || []);
+    };
+
+    fetchPendingUsers();
   }, []);
 
-  const handleVerify = (userId) => {
-    axios.put(`/api/admin/verify-user/${userId}`).then(() => {
-      setUsers(users.filter((user) => user._id !== userId));
-    });
-  };
+  // Handle user verification
+  const handleVerify = async (userId, isApproved) => {
+    const result = await verifyUser(userId, isApproved);
+    if (result.status === "error") {
+      toast.error(result.message || "Failed to verify user");
+      return;
+    }
 
-  const handleDelete = (userId) => {
-    axios.delete(`/api/admin/delete-user/${userId}`).then(() => {
-      setUsers(users.filter((user) => user._id !== userId));
-    });
+    toast.success(result.message);
+    // Remove the verified/rejected user from the list
+    setPendingUsers(pendingUsers.filter((user) => user._id !== userId));
   };
 
   return (
-    <div className="p-4">
-      <h2 className="text-xl font-bold mb-4">Pending Registrations</h2>
-      <table className="w-full border">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Role</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((user) => (
-            <tr key={user._id}>
-              <td>{user.name}</td>
-              <td>{user.email}</td>
-              <td>{user.role}</td>
-              <td>
-                <button
-                  onClick={() => handleVerify(user._id)}
-                  className="bg-green-500 text-white px-2 py-1 mr-2"
-                >
-                  Verify
-                </button>
-                <button
-                  onClick={() => handleDelete(user._id)}
-                  className="bg-red-500 text-white px-2 py-1"
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+    <Container fluid className="vh-100 bg-light">
+      <Row className="py-3 bg-primary text-white">
+        <Col>
+          <h1 className="text-center">Admin Dashboard</h1>
+        </Col>
+      </Row>
+
+      <Row className="mt-4">
+        <Col md={12} className="p-3 bg-white shadow-sm rounded">
+          <h4>Pending Signups</h4>
+          {pendingUsers.length === 0 ? (
+            <p>No pending signups to verify.</p>
+          ) : (
+            <Table striped bordered hover>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingUsers.map((user, index) => (
+                  <tr key={user._id}>
+                    <td>{index + 1}</td>
+                    <td>{user.name}</td>
+                    <td>{user.email}</td>
+                    <td>{user.role}</td>
+                    <td>
+                      <Button
+                        variant="success"
+                        size="sm"
+                        className="me-2"
+                        onClick={() => handleVerify(user._id, true)}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={() => handleVerify(user._id, false)}
+                      >
+                        Reject
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </Col>
+      </Row>
+    </Container>
   );
-}
+};
 
 export default AdminPage;
