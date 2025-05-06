@@ -10,7 +10,7 @@ const userSchema = new mongoose.Schema({
   role: {
     type: String,
     required: true,
-    enum: ["Doctor", "Patient", "Receptionist"],
+    enum: ["Doctor", "Patient", "Receptionist", "Admin"],
   },
   isVerified: { type: Boolean, default: false },
 });
