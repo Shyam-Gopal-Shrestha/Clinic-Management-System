@@ -11,11 +11,54 @@ import {
   ListGroup,
   Button,
   Dropdown,
+  Form,
 } from "react-bootstrap";
 
 function DoctorDashboard() {
   const [date, setDate] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [availability, setAvailability] = useState([]);
+  const [newAvailability, setNewAvailability] = useState({
+    date: new Date(),
+    start: "",
+    end: "",
+  });
+
+  // Time slots options (every 30 minutes)
+  const timeSlots = [
+    "09:00 AM",
+    "09:30 AM",
+    "10:00 AM",
+    "10:30 AM",
+    "11:00 AM",
+    "11:30 AM",
+    "12:00 PM",
+    "12:30 PM",
+    "01:00 PM",
+    "01:30 PM",
+    "02:00 PM",
+    "02:30 PM",
+    "03:00 PM",
+    "03:30 PM",
+    "04:00 PM",
+    "04:30 PM",
+  ];
+
+  const handleAvailabilityChange = (e) => {
+    setNewAvailability({ ...newAvailability, [e.target.name]: e.target.value });
+  };
+
+  const handleAddAvailability = () => {
+    if (newAvailability.start && newAvailability.end) {
+      setAvailability([
+        ...availability,
+        { ...newAvailability, id: Date.now() },
+      ]);
+      setNewAvailability({ date: new Date(), start: "", end: "" });
+    } else {
+      alert("Please fill all fields!");
+    }
+  };
 
   return (
     <div className="vh-100 d-flex flex-column">
@@ -140,14 +183,72 @@ function DoctorDashboard() {
               </div>
             </Col>
 
-            {/* Right Calendar */}
             <Col lg={4}>
+              {/* Manage Availability Section */}
               <div className="bg-white p-3 rounded shadow-sm mb-4">
-                <h5>Schedule</h5>
-                <Calendar onChange={setDate} value={date} />
-                <p className="mt-3">
-                  Selected: <strong>{date.toDateString()}</strong>
-                </p>
+                <h5>Manage Availability</h5>
+                <Form>
+                  <Form.Group className="mb-3">
+                    <Form.Label>Select Date</Form.Label>
+                    <Calendar
+                      onChange={(selectedDate) =>
+                        setNewAvailability({
+                          ...newAvailability,
+                          date: selectedDate,
+                        })
+                      }
+                      value={newAvailability.date}
+                    />
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
+                    <Form.Label>Start Time</Form.Label>
+                    <Form.Control
+                      as="select"
+                      name="start"
+                      value={newAvailability.start}
+                      onChange={handleAvailabilityChange}
+                    >
+                      <option value="">Select Start Time</option>
+                      {timeSlots.map((time) => (
+                        <option key={time} value={time}>
+                          {time}
+                        </option>
+                      ))}
+                    </Form.Control>
+                  </Form.Group>
+
+                  <Form.Group className="mb-3">
+                    <Form.Label>End Time</Form.Label>
+                    <Form.Control
+                      as="select"
+                      name="end"
+                      value={newAvailability.end}
+                      onChange={handleAvailabilityChange}
+                    >
+                      <option value="">Select End Time</option>
+                      {timeSlots.map((time) => (
+                        <option key={time} value={time}>
+                          {time}
+                        </option>
+                      ))}
+                    </Form.Control>
+                  </Form.Group>
+
+                  <Button variant="primary" onClick={handleAddAvailability}>
+                    Add Availability
+                  </Button>
+                </Form>
+
+                <h6 className="mt-4">Current Availability</h6>
+                <ListGroup>
+                  {availability.map((slot) => (
+                    <ListGroup.Item key={slot.id}>
+                      {new Date(slot.date).toDateString()}: {slot.start} -{" "}
+                      {slot.end}
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
               </div>
             </Col>
           </Row>
