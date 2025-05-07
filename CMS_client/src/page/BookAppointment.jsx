@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import {
@@ -11,37 +11,128 @@ import {
   Card,
 } from "react-bootstrap";
 import { FaCalendarAlt, FaClock, FaUserMd, FaClipboard } from "react-icons/fa";
+import { fetchDoctorAvailability } from "../../axios/availabilityAxios";
+import { fetchDoctors } from "../../axios/doctorAxios";
 
+// Add custom styles
+const calendarStyles = `
+  .available-date {
+    background-color: #e6ffe6;
+    color: #006600;
+    font-weight: bold;
+  }
+  .react-calendar__tile:disabled {
+    background-color: #f0f0f0;
+    color: #cccccc;
+  }
+`;
+
+// Add style tag to the component
 function BookAppointment() {
+  // Add new state for doctors
+  const [doctors, setDoctors] = useState([]);
+
+  useEffect(() => {
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = calendarStyles;
+    document.head.appendChild(styleSheet);
+    return () => {
+      document.head.removeChild(styleSheet);
+    };
+  }, []);
+
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedTime, setSelectedTime] = useState("");
   const [form, setForm] = useState({ doctor: "", reason: "" });
   const [confirmed, setConfirmed] = useState(false);
+  const [availableTimes, setAvailableTimes] = useState([]);
+  const [availability, setAvailability] = useState([]);
+  const [availableDates, setAvailableDates] = useState([]);
 
+  // Fetch availability for the selected doctor
+  const fetchAvailability = async (doctorId) => {
+    console.log("Fetching availability for doctorId:", doctorId);
+    try {
+      if (!doctorId) {
+        setAvailability([]);
+        setAvailableDates([]);
+        return;
+      }
+
+      const data = await fetchDoctorAvailability(doctorId);
+      console.log("Received availability data:", data); // Add this line
+
+      if (data && data.length > 0) {
+        setAvailability(data);
+        const dates = [
+          ...new Set(data.map((slot) => new Date(slot.date).toDateString())),
+        ];
+        console.log("Available dates:", dates); // Add this line
+        setAvailableDates(dates);
+      } else {
+        console.log("No availability data found"); // Add this line
+        setAvailability([]);
+        setAvailableDates([]);
+      }
+    } catch (error) {
+      console.error("Error fetching availability:", error);
+      setAvailability([]);
+      setAvailableDates([]);
+    }
+  };
+
+  // Load doctors when component mounts
+  useEffect(() => {
+    const loadDoctors = async () => {
+      try {
+        const response = await fetchDoctors();
+        // Make sure we're setting an array
+        setDoctors(response.data || []);
+      } catch (error) {
+        console.error("Error loading doctors:", error);
+        setDoctors([]); // Set empty array on error
+      }
+    };
+    loadDoctors();
+  }, []);
+
+  // Add this console.log to debug
+  console.log("Doctors state:", doctors);
+
+  // Handle form changes
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
-  };
 
-  const generateTimeSlots = () => {
-    const times = [];
-    for (let hour = 0; hour < 24; hour++) {
-      for (let min = 0; min < 60; min += 30) {
-        const date = new Date();
-        date.setHours(hour);
-        date.setMinutes(min);
-        const timeString = date.toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: true,
-        });
-        times.push(timeString);
-      }
+    // Fetch availability when a doctor is selected
+    if (e.target.name === "doctor") {
+      console.log("Doctor selected:", e.target.value); // Debugging
+      fetchAvailability(e.target.value);
     }
-    return times;
   };
 
-  const availableTimes = generateTimeSlots();
+  // Filter available times for the selected date
+  const filterAvailableTimes = () => {
+    console.log("Filtering times for selected date:", selectedDate); // Debugging
+    const times = [];
+    availability.forEach((slot) => {
+      const slotDate = new Date(slot.date).toDateString();
+      const selectedDateString = selectedDate.toDateString();
 
+      if (slotDate === selectedDateString) {
+        times.push(`${slot.start} - ${slot.end}`);
+      }
+    });
+    console.log("Filtered times:", times); // Debugging
+    setAvailableTimes(times);
+  };
+
+  // Update available times when selectedDate or availability changes
+  useEffect(() => {
+    console.log("Availability state updated:", availability); // Debugging
+    filterAvailableTimes();
+  }, [selectedDate, availability]);
+
+  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!selectedTime) {
@@ -69,6 +160,22 @@ function BookAppointment() {
     setConfirmed(true);
   };
 
+  const tileDisabled = ({ date, view }) => {
+    if (view === "month") {
+      // Disable dates that aren't in availableDates and past dates
+      const isUnavailable = !availableDates.includes(date.toDateString());
+      const isPastDate = date < new Date(new Date().setHours(0, 0, 0, 0));
+      return isUnavailable || isPastDate;
+    }
+  };
+
+  const tileClassName = ({ date, view }) => {
+    if (view === "month" && availableDates.includes(date.toDateString())) {
+      return "available-date";
+    }
+    return null;
+  };
+
   return (
     <Container className="mt-5">
       <h3 className="text-center mb-4">Book an Appointment</h3>
@@ -94,11 +201,12 @@ function BookAppointment() {
                   required
                 >
                   <option value="">-- Choose your Doctor --</option>
-                  <option value="Dr. Anjali Thapa">Dr. Anjali Thapa</option>
-                  <option value="Dr. Sujan Prajapati">
-                    Dr. Sujan Prajapati
-                  </option>
-                  <option value="Dr. Shalu Pokhrel">Dr. Shalu Pokhrel</option>
+                  {Array.isArray(doctors) &&
+                    doctors.map((doctor) => (
+                      <option key={doctor._id} value={doctor._id}>
+                        Dr. {doctor.name}
+                      </option>
+                    ))}
                 </Form.Select>
               </Form.Group>
 
@@ -129,6 +237,9 @@ function BookAppointment() {
                       onChange={setSelectedDate}
                       value={selectedDate}
                       className="w-100"
+                      tileDisabled={tileDisabled}
+                      tileClassName={tileClassName}
+                      minDate={new Date()}
                     />
                   </Form.Group>
                 </Col>
@@ -150,6 +261,8 @@ function BookAppointment() {
                         </option>
                       ))}
                     </Form.Select>
+
+                    <p>Available times: {JSON.stringify(availableTimes)}</p>
                   </Form.Group>
                 </Col>
               </Row>

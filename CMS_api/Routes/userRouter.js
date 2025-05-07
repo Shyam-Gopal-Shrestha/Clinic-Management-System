@@ -4,7 +4,7 @@ import {
   buildSuccessResponse,
   buildErrorResponse,
 } from "../utility/responseHelper.js";
-import { createUser, findUserByEmail } from "../Models/userModel.js";
+import User, { findDoctors } from "../Models/userModel.js";
 
 const userRouter = express.Router();
 
@@ -72,6 +72,22 @@ userRouter.post("/login", async (req, res) => {
   } catch (error) {
     console.log("error during login", error);
     buildErrorResponse(res, "Failed to login");
+  }
+});
+
+// Get all doctors
+userRouter.get("/doctors", async (req, res) => {
+  try {
+    const doctors = await findDoctors();
+
+    if (!doctors || doctors.length === 0) {
+      return buildErrorResponse(res, "No doctors found");
+    }
+
+    buildSuccessResponse(res, doctors, "Doctors fetched successfully");
+  } catch (error) {
+    console.error("Error fetching doctors:", error);
+    buildErrorResponse(res, "Error fetching doctors");
   }
 });
 

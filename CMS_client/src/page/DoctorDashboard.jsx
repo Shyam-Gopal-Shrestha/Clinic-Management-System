@@ -12,6 +12,7 @@ import {
   Dropdown,
   Form,
 } from "react-bootstrap";
+import axios from "axios";
 import { handleAddAvailability } from "../../axios/availabilityAxios"; // Import the function from availabilityAxios.js
 
 function DoctorDashboard() {
@@ -44,12 +45,29 @@ function DoctorDashboard() {
     "04:30 PM",
   ];
 
-  // Fetch the logged-in doctor's name
+  // Fetch the logged-in doctor's name and availability
   useEffect(() => {
-    const name = localStorage.getItem("userName");
-    if (name) {
-      setUserName(name);
-    }
+    const fetchDoctorData = async () => {
+      const name = localStorage.getItem("userName");
+      const doctorId = localStorage.getItem("doctorId");
+
+      if (name) {
+        setUserName(name);
+      }
+
+      if (doctorId) {
+        try {
+          const response = await axios.get(
+            `http://localhost:8000/api/availability/${doctorId}`
+          );
+          setAvailability(response.data);
+        } catch (error) {
+          console.error("Error fetching availability:", error);
+        }
+      }
+    };
+
+    fetchDoctorData();
   }, []);
 
   const handleAvailabilityChange = (e) => {
