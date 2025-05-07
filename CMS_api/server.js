@@ -6,6 +6,7 @@ import userRouter from "./Routes/userRouter.js";
 import adminRouter from "./Routes/adminRouter.js";
 import conMongoDb from "./config/mongodbConfig.js";
 import seedAdmin from "./utility/seedAdmin.js";
+import availabilityRouter from "./Routes/availabilityRouter.js"; // Import the availability router
 
 // Load environment variables
 dotenv.config();
@@ -20,6 +21,7 @@ app.use(cors());
 // Routes
 app.use("/api/users", userRouter);
 app.use("/api/admin", adminRouter);
+app.use("/api/availability", availabilityRouter); // Ensure this route is defined
 
 // Start server
 const startServer = async () => {

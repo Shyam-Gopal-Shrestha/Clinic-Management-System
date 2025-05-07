@@ -7,6 +7,7 @@ import ReceptionistPage from "./page/ReceptionistPage";
 import "./App.css";
 import "bootstrap/dist/css/bootstrap.min.css";
 import { ToastContainer, toast } from "react-toastify";
+import BookAppointment from "./page/BookAppointment";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/doctor-dashboard" element={<DoctorDashboard />} />
         <Route path="/patient-dashboard" element={<PatientDashboard />} />
         <Route path="/receptionist-dashboard" element={<ReceptionistPage />} />
+        <Route path="/book-appointment" element={<BookAppointment />} />
       </Routes>
       <ToastContainer />
     </Router>

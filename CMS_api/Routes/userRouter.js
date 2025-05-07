@@ -65,6 +65,7 @@ userRouter.post("/login", async (req, res) => {
       role: user.role, // Assuming the user object has a 'role' field
       name: user.name, // Optional: Include other user details if needed
       email: user.email,
+      id: user._id, // Include the user's ID
     };
 
     buildSuccessResponse(res, userData, "Login Successful");

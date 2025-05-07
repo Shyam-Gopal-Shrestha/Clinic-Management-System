@@ -26,31 +26,26 @@ const LoginForm = () => {
       password,
     });
 
-    console.log("API Response:", result); // Debugging: Check the API response
-
     if (result.status === "error") {
       return toast.error(result.message);
     }
-
+    console.log("Login Response:", result.data);
     toast.success(result.message);
 
-    // Store role in local storage
-    const { role } = result.data; // Assuming the API returns a "role" field
-    console.log("User role:", role); // Debugging: Check the role
+    // Store user details in local storage
+    const { role, name, id } = result.data; // Assuming the API returns "role" and "name"
     localStorage.setItem("userRole", role);
+    localStorage.setItem("userName", name); // Store the user's name
+    localStorage.setItem("doctorId", id); // Store the doctor's ID
 
     // Redirect based on role
     if (role === "Doctor") {
-      console.log("Navigating to /doctor-dashboard");
       navigate("/doctor-dashboard");
     } else if (role === "Patient") {
-      console.log("Navigating to /patient-dashboard");
       navigate("/patient-dashboard");
     } else if (role === "Receptionist") {
-      console.log("Navigating to /receptionist-dashboard");
       navigate("/receptionist-dashboard");
     } else if (role === "Admin") {
-      console.log("Navigating to /admin-dashboard");
       navigate("/admin-dashboard");
     } else {
       toast.error("Invalid role. Please contact support.");

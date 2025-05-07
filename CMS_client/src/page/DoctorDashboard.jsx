@@ -1,9 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { FaBell } from "react-icons/fa";
 import {
-  Container,
   Row,
   Col,
   Navbar,
@@ -13,9 +12,9 @@ import {
   Dropdown,
   Form,
 } from "react-bootstrap";
+import { handleAddAvailability } from "../../axios/availabilityAxios"; // Import the function from availabilityAxios.js
 
 function DoctorDashboard() {
-  const [date, setDate] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [availability, setAvailability] = useState([]);
   const [newAvailability, setNewAvailability] = useState({
@@ -23,6 +22,7 @@ function DoctorDashboard() {
     start: "",
     end: "",
   });
+  const [userName, setUserName] = useState("");
 
   // Time slots options (every 30 minutes)
   const timeSlots = [
@@ -44,19 +44,33 @@ function DoctorDashboard() {
     "04:30 PM",
   ];
 
+  // Fetch the logged-in doctor's name
+  useEffect(() => {
+    const name = localStorage.getItem("userName");
+    if (name) {
+      setUserName(name);
+    }
+  }, []);
+
   const handleAvailabilityChange = (e) => {
     setNewAvailability({ ...newAvailability, [e.target.name]: e.target.value });
   };
 
-  const handleAddAvailability = () => {
-    if (newAvailability.start && newAvailability.end) {
-      setAvailability([
-        ...availability,
-        { ...newAvailability, id: Date.now() },
-      ]);
-      setNewAvailability({ date: new Date(), start: "", end: "" });
-    } else {
-      alert("Please fill all fields!");
+  const addAvailability = async () => {
+    if (!newAvailability.start || !newAvailability.end) {
+      alert("Please select both start and end times.");
+      return;
+    }
+
+    try {
+      await handleAddAvailability(
+        newAvailability,
+        setAvailability,
+        setNewAvailability
+      );
+    } catch (error) {
+      console.error("Error adding availability:", error);
+      alert("Failed to add availability. Please try again.");
     }
   };
 
@@ -73,6 +87,9 @@ function DoctorDashboard() {
         {/* Navbar Section */}
         <Navbar expand="lg" className="flex-grow-1 ms-3">
           <Nav className="ms-auto d-flex align-items-center">
+            <Nav.Link href="#" style={{ color: "#fff" }}>
+              Hi, {userName}!
+            </Nav.Link>
             <Nav.Link href="#" style={{ color: "#fff" }}>
               <FaBell style={{ marginRight: "5px" }} /> Notifications
             </Nav.Link>
@@ -235,15 +252,15 @@ function DoctorDashboard() {
                     </Form.Control>
                   </Form.Group>
 
-                  <Button variant="primary" onClick={handleAddAvailability}>
+                  <Button variant="primary" onClick={addAvailability}>
                     Add Availability
                   </Button>
                 </Form>
 
                 <h6 className="mt-4">Current Availability</h6>
                 <ListGroup>
-                  {availability.map((slot) => (
-                    <ListGroup.Item key={slot.id}>
+                  {availability.map((slot, index) => (
+                    <ListGroup.Item key={index}>
                       {new Date(slot.date).toDateString()}: {slot.start} -{" "}
                       {slot.end}
                     </ListGroup.Item>
