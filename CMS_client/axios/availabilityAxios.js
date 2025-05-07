@@ -11,63 +11,55 @@ const axiosInstance = axios.create({
   },
 });
 
-export const handleAddAvailability = async (
-  newAvailability,
-  setAvailability,
-  setNewAvailability
-) => {
-  // Validate input
-  if (
-    !newAvailability?.start ||
-    !newAvailability?.end ||
-    !newAvailability?.date
-  ) {
-    alert("Please fill all fields!");
-    return;
-  }
-
+export const handleAddAvailability = async (availabilityData) => {
   try {
-    const doctorId = localStorage.getItem("doctorId");
-    if (!doctorId) {
-      alert("Doctor ID is missing. Please log in again.");
-      return;
+    console.log("Adding availability for doctor:", availabilityData.doctorId);
+
+    const response = await axiosInstance.post("/", availabilityData);
+
+    if (response.data.success) {
+      console.log("Availability added successfully:", response.data);
+      return response.data;
+    } else {
+      throw new Error(response.data.message || "Failed to add availability");
     }
-
-    // Validate time format
-    if (
-      !isValidTimeFormat(newAvailability.start) ||
-      !isValidTimeFormat(newAvailability.end)
-    ) {
-      alert("Invalid time format. Please use HH:MM AM/PM format");
-      return;
-    }
-
-    const requestData = {
-      doctorId,
-      date: newAvailability.date.toISOString(),
-      start: newAvailability.start,
-      end: newAvailability.end,
-    };
-
-    console.log("Sending availability data:", requestData);
-
-    const response = await axiosInstance.post("/", requestData);
-
-    console.log("Server response:", response.data);
-
-    setAvailability((prev) => [
-      ...prev,
-      {
-        ...newAvailability,
-        id: response.data._id,
-        doctorId,
-      },
-    ]);
-
-    setNewAvailability({ date: new Date(), start: "", end: "" });
-    alert("Availability added successfully!");
   } catch (error) {
+    console.error("Error adding availability:", error);
     handleError(error);
+    throw error;
+  }
+};
+
+export const fetchDoctorAvailability = async (doctorId) => {
+  try {
+    console.log("Fetching availability for doctor:", doctorId);
+
+    const response = await axiosInstance.get(`/${doctorId}`);
+    console.log("Raw availability response:", response.data);
+
+    if (response.data && Array.isArray(response.data)) {
+      // Filter out past dates
+      const currentDate = new Date();
+      return response.data.filter((slot) => new Date(slot.date) >= currentDate);
+    }
+
+    if (
+      response.data &&
+      response.data.data &&
+      Array.isArray(response.data.data)
+    ) {
+      // Handle response with data wrapper
+      const currentDate = new Date();
+      return response.data.data.filter(
+        (slot) => new Date(slot.date) >= currentDate
+      );
+    }
+
+    console.warn("Unexpected response format:", response.data);
+    return [];
+  } catch (error) {
+    console.error("Error fetching availability:", error);
+    throw error;
   }
 };
 
@@ -92,19 +84,5 @@ const handleError = (error) => {
     );
   } else {
     alert("An unexpected error occurred. Please try again.");
-  }
-};
-
-export const fetchDoctorAvailability = async (doctorId) => {
-  try {
-    if (!doctorId) {
-      throw new Error("Doctor ID is required");
-    }
-
-    const response = await axiosInstance.get(`/${doctorId}`);
-    return response.data;
-  } catch (error) {
-    handleError(error);
-    return [];
   }
 };

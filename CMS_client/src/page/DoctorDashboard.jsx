@@ -13,7 +13,10 @@ import {
   Form,
 } from "react-bootstrap";
 import axios from "axios";
-import { handleAddAvailability } from "../../axios/availabilityAxios"; // Import the function from availabilityAxios.js
+import {
+  handleAddAvailability,
+  fetchDoctorAvailability,
+} from "../../axios/availabilityAxios";
 
 function DoctorDashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -24,6 +27,9 @@ function DoctorDashboard() {
     end: "",
   });
   const [userName, setUserName] = useState("");
+
+  // Add doctorId to state
+  const [doctorId, setDoctorId] = useState(null);
 
   // Time slots options (every 30 minutes)
   const timeSlots = [
@@ -48,22 +54,18 @@ function DoctorDashboard() {
   // Fetch the logged-in doctor's name and availability
   useEffect(() => {
     const fetchDoctorData = async () => {
-      const name = localStorage.getItem("userName");
-      const doctorId = localStorage.getItem("doctorId");
+      // Get user data from localStorage
+      const userData = JSON.parse(localStorage.getItem("user"));
+      console.log("Loaded user data:", userData);
 
-      if (name) {
-        setUserName(name);
-      }
+      if (userData && userData.role === "Doctor") {
+        setUserName(userData.name);
+        setDoctorId(userData.id);
 
-      if (doctorId) {
-        try {
-          const response = await axios.get(
-            `http://localhost:8000/api/availability/${doctorId}`
-          );
-          setAvailability(response.data);
-        } catch (error) {
-          console.error("Error fetching availability:", error);
-        }
+        // Fetch availability for this doctor
+        const availabilityData = await fetchDoctorAvailability(userData.id);
+        console.log("Fetched availability:", availabilityData);
+        setAvailability(availabilityData || []);
       }
     };
 
@@ -71,7 +73,11 @@ function DoctorDashboard() {
   }, []);
 
   const handleAvailabilityChange = (e) => {
-    setNewAvailability({ ...newAvailability, [e.target.name]: e.target.value });
+    setNewAvailability({
+      ...newAvailability,
+      [e.target.name]: e.target.value,
+      doctorId: doctorId, // Include doctorId in availability data
+    });
   };
 
   const addAvailability = async () => {
@@ -80,16 +86,39 @@ function DoctorDashboard() {
       return;
     }
 
+    if (!doctorId) {
+      alert("Doctor ID not found. Please log in again.");
+      return;
+    }
+
     try {
-      await handleAddAvailability(
-        newAvailability,
-        setAvailability,
-        setNewAvailability
-      );
+      const availabilityData = {
+        ...newAvailability,
+        doctorId,
+        date: newAvailability.date.toISOString(),
+      };
+
+      const result = await handleAddAvailability(availabilityData);
+
+      if (result.success) {
+        setAvailability((prev) => [...prev, result.data]);
+        setNewAvailability({
+          date: new Date(),
+          start: "",
+          end: "",
+        });
+        alert("Availability added successfully!");
+      }
     } catch (error) {
       console.error("Error adding availability:", error);
       alert("Failed to add availability. Please try again.");
     }
+  };
+
+  // Add logout handler
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    window.location.href = "/login";
   };
 
   return (
@@ -106,7 +135,7 @@ function DoctorDashboard() {
         <Navbar expand="lg" className="flex-grow-1 ms-3">
           <Nav className="ms-auto d-flex align-items-center">
             <Nav.Link href="#" style={{ color: "#fff" }}>
-              Hi, {userName}!
+              Hi, Dr. {userName}!
             </Nav.Link>
             <Nav.Link href="#" style={{ color: "#fff" }}>
               <FaBell style={{ marginRight: "5px" }} /> Notifications
@@ -121,7 +150,7 @@ function DoctorDashboard() {
               </Dropdown.Toggle>
               <Dropdown.Menu>
                 <Dropdown.Item href="#">Update Profile</Dropdown.Item>
-                <Dropdown.Item href="#">Logout</Dropdown.Item>
+                <Dropdown.Item onClick={handleLogout}>Logout</Dropdown.Item>
               </Dropdown.Menu>
             </Dropdown>
           </Nav>
@@ -277,12 +306,18 @@ function DoctorDashboard() {
 
                 <h6 className="mt-4">Current Availability</h6>
                 <ListGroup>
-                  {availability.map((slot, index) => (
-                    <ListGroup.Item key={index}>
-                      {new Date(slot.date).toDateString()}: {slot.start} -{" "}
-                      {slot.end}
+                  {availability.length > 0 ? (
+                    availability.map((slot, index) => (
+                      <ListGroup.Item key={index}>
+                        {new Date(slot.date).toLocaleDateString()}: {slot.start}{" "}
+                        - {slot.end}
+                      </ListGroup.Item>
+                    ))
+                  ) : (
+                    <ListGroup.Item>
+                      No availability slots added yet
                     </ListGroup.Item>
-                  ))}
+                  )}
                 </ListGroup>
               </div>
             </Col>

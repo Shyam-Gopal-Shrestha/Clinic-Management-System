@@ -1,17 +1,29 @@
 import axios from "axios";
 
-const DOCTOR_API_URL = "http://localhost:8000/api/users/doctors";
+const BASE_URL = "http://localhost:8000/api/users";
+
+const axiosInstance = axios.create({
+  baseURL: BASE_URL,
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
+});
 
 export const fetchDoctors = async () => {
   try {
-    const response = await axios.get(DOCTOR_API_URL, {
-      withCredentials: true,
-    });
+    console.log("Fetching doctors from:", `${BASE_URL}/doctors`);
+    const response = await axiosInstance.get("/doctors");
 
-    // Make sure we're returning the data array
-    return Array.isArray(response.data.data) ? response.data : { data: [] };
+    console.log("Doctors response:", response.data);
+
+    if (response.data.success && Array.isArray(response.data.data)) {
+      return response.data.data;
+    }
+
+    throw new Error(response.data.message || "Failed to fetch doctors");
   } catch (error) {
     console.error("Error fetching doctors:", error);
-    return { data: [] };
+    throw error;
   }
 };

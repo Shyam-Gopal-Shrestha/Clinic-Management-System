@@ -29,8 +29,35 @@ const calendarStyles = `
 
 // Add style tag to the component
 function BookAppointment() {
-  // Add new state for doctors
   const [doctors, setDoctors] = useState([]);
+  const [selectedDoctor, setSelectedDoctor] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [selectedTime, setSelectedTime] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  // Add missing state variables
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [availableDates, setAvailableDates] = useState([]);
+  const [form, setForm] = useState({ doctor: "", reason: "" });
+  const [confirmed, setConfirmed] = useState(false);
+
+  // Move these calculations after state declarations
+  const availableTimes = selectedDate
+    ? availableSlots
+        .filter(
+          (slot) => new Date(slot.date).toLocaleDateString() === selectedDate
+        )
+        .map((slot) => ({
+          start: slot.start,
+          end: slot.end,
+        }))
+    : [];
+
+  const uniqueAvailableDates = [
+    ...new Set(
+      availableSlots.map((slot) => new Date(slot.date).toLocaleDateString())
+    ),
+  ];
 
   useEffect(() => {
     const styleSheet = document.createElement("style");
@@ -41,96 +68,105 @@ function BookAppointment() {
     };
   }, []);
 
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [selectedTime, setSelectedTime] = useState("");
-  const [form, setForm] = useState({ doctor: "", reason: "" });
-  const [confirmed, setConfirmed] = useState(false);
-  const [availableTimes, setAvailableTimes] = useState([]);
-  const [availability, setAvailability] = useState([]);
-  const [availableDates, setAvailableDates] = useState([]);
-
-  // Fetch availability for the selected doctor
-  const fetchAvailability = async (doctorId) => {
-    console.log("Fetching availability for doctorId:", doctorId);
-    try {
-      if (!doctorId) {
-        setAvailability([]);
-        setAvailableDates([]);
-        return;
-      }
-
-      const data = await fetchDoctorAvailability(doctorId);
-      console.log("Received availability data:", data); // Add this line
-
-      if (data && data.length > 0) {
-        setAvailability(data);
-        const dates = [
-          ...new Set(data.map((slot) => new Date(slot.date).toDateString())),
-        ];
-        console.log("Available dates:", dates); // Add this line
-        setAvailableDates(dates);
-      } else {
-        console.log("No availability data found"); // Add this line
-        setAvailability([]);
-        setAvailableDates([]);
-      }
-    } catch (error) {
-      console.error("Error fetching availability:", error);
-      setAvailability([]);
-      setAvailableDates([]);
-    }
-  };
-
-  // Load doctors when component mounts
+  // Fetch all doctors when component mounts
   useEffect(() => {
     const loadDoctors = async () => {
+      setLoading(true);
+      setError("");
+
       try {
-        const response = await fetchDoctors();
-        // Make sure we're setting an array
-        setDoctors(response.data || []);
-      } catch (error) {
-        console.error("Error loading doctors:", error);
-        setDoctors([]); // Set empty array on error
+        const doctorsList = await fetchDoctors();
+        console.log("Loaded doctors:", doctorsList);
+        setDoctors(doctorsList || []);
+      } catch (err) {
+        console.error("Error loading doctors:", err);
+        setError(err.message || "Failed to load doctors");
+      } finally {
+        setLoading(false);
       }
     };
+
     loadDoctors();
   }, []);
 
-  // Add this console.log to debug
-  console.log("Doctors state:", doctors);
-
-  // Handle form changes
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-
-    // Fetch availability when a doctor is selected
-    if (e.target.name === "doctor") {
-      console.log("Doctor selected:", e.target.value); // Debugging
-      fetchAvailability(e.target.value);
-    }
-  };
-
-  // Filter available times for the selected date
-  const filterAvailableTimes = () => {
-    console.log("Filtering times for selected date:", selectedDate); // Debugging
-    const times = [];
-    availability.forEach((slot) => {
-      const slotDate = new Date(slot.date).toDateString();
-      const selectedDateString = selectedDate.toDateString();
-
-      if (slotDate === selectedDateString) {
-        times.push(`${slot.start} - ${slot.end}`);
-      }
-    });
-    console.log("Filtered times:", times); // Debugging
-    setAvailableTimes(times);
-  };
-
-  // Update available times when selectedDate or availability changes
+  // Fetch availability when doctor is selected
   useEffect(() => {
-    console.log("Availability state updated:", availability); // Debugging
-    filterAvailableTimes();
-  }, [selectedDate, availability]);
+    const fetchAvailability = async () => {
+      if (!selectedDoctor) return;
+
+      setLoading(true);
+      try {
+        const response = await fetchDoctorAvailability(selectedDoctor);
+        console.log("Raw availability response:", response);
+
+        // Check if response is an array and has items
+        if (Array.isArray(response) && response.length > 0) {
+          setAvailableSlots(response);
+
+          // Extract and format unique dates
+          const dates = [
+            ...new Set(
+              response.map((slot) => new Date(slot.date).toLocaleDateString())
+            ),
+          ];
+
+          console.log("Formatted available dates:", dates);
+          setAvailableDates(dates);
+        } else {
+          setAvailableSlots([]);
+          setAvailableDates([]);
+          setError("No available slots for this doctor");
+        }
+      } catch (err) {
+        console.error("Error fetching availability:", err);
+        setError("Failed to load doctor availability");
+        setAvailableSlots([]);
+        setAvailableDates([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAvailability();
+  }, [selectedDoctor]);
+
+  // Update handleDateSelect function
+  const handleDateSelect = (date) => {
+    const formattedDate = date.toLocaleDateString();
+    console.log("Selected date:", formattedDate);
+    setSelectedDate(formattedDate);
+
+    // Filter times for selected date
+    const timesForDate = availableSlots
+      .filter((slot) => {
+        const slotDate = new Date(slot.date).toLocaleDateString();
+        console.log("Comparing dates:", { slotDate, formattedDate });
+        return slotDate === formattedDate;
+      })
+      .map((slot) => ({
+        start: slot.start,
+        end: slot.end,
+      }));
+
+    console.log("Available times for selected date:", timesForDate);
+  };
+
+  // Update form handling
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "doctor") {
+      console.log("Selected doctor ID:", value);
+      setSelectedDoctor(value);
+      // Reset date and time when doctor changes
+      setSelectedDate("");
+      setSelectedTime("");
+      setAvailableSlots([]);
+      setAvailableDates([]);
+    }
+
+    setForm((prev) => ({ ...prev, [name]: value }));
+  };
 
   // Handle form submission
   const handleSubmit = (e) => {
@@ -160,20 +196,24 @@ function BookAppointment() {
     setConfirmed(true);
   };
 
-  const tileDisabled = ({ date, view }) => {
-    if (view === "month") {
-      // Disable dates that aren't in availableDates and past dates
-      const isUnavailable = !availableDates.includes(date.toDateString());
-      const isPastDate = date < new Date(new Date().setHours(0, 0, 0, 0));
-      return isUnavailable || isPastDate;
-    }
+  const tileDisabled = ({ date }) => {
+    const formattedDate = date.toLocaleDateString();
+    return !availableDates.includes(formattedDate);
   };
 
   const tileClassName = ({ date, view }) => {
-    if (view === "month" && availableDates.includes(date.toDateString())) {
+    if (
+      view === "month" &&
+      uniqueAvailableDates.includes(date.toDateString())
+    ) {
       return "available-date";
     }
     return null;
+  };
+
+  const handleDoctorChange = (e) => {
+    setSelectedDoctor(e.target.value);
+    setError("");
   };
 
   return (
@@ -185,6 +225,9 @@ function BookAppointment() {
           Appointment booked successfully!
         </Alert>
       )}
+
+      {error && <Alert variant="danger">{error}</Alert>}
+      {loading && <Alert variant="info">Loading...</Alert>}
 
       <Card className="p-4 shadow-lg">
         <Form onSubmit={handleSubmit}>
@@ -199,15 +242,22 @@ function BookAppointment() {
                   value={form.doctor}
                   onChange={handleChange}
                   required
+                  disabled={loading}
                 >
                   <option value="">-- Choose your Doctor --</option>
-                  {Array.isArray(doctors) &&
+                  {doctors.length > 0 ? (
                     doctors.map((doctor) => (
                       <option key={doctor._id} value={doctor._id}>
                         Dr. {doctor.name}
                       </option>
-                    ))}
+                    ))
+                  ) : (
+                    <option disabled>No doctors available</option>
+                  )}
                 </Form.Select>
+                {error && (
+                  <Form.Text className="text-danger">{error}</Form.Text>
+                )}
               </Form.Group>
 
               <Form.Group className="mb-3">
@@ -233,14 +283,18 @@ function BookAppointment() {
                     <Form.Label>
                       Select a Date <FaCalendarAlt />
                     </Form.Label>
-                    <Calendar
-                      onChange={setSelectedDate}
+                    <Form.Select
                       value={selectedDate}
-                      className="w-100"
-                      tileDisabled={tileDisabled}
-                      tileClassName={tileClassName}
-                      minDate={new Date()}
-                    />
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      disabled={!uniqueAvailableDates.length}
+                    >
+                      <option value="">Choose a date...</option>
+                      {uniqueAvailableDates.map((date) => (
+                        <option key={date} value={date}>
+                          {date}
+                        </option>
+                      ))}
+                    </Form.Select>
                   </Form.Group>
                 </Col>
 
@@ -252,30 +306,35 @@ function BookAppointment() {
                     <Form.Select
                       value={selectedTime}
                       onChange={(e) => setSelectedTime(e.target.value)}
-                      required
+                      disabled={!availableTimes.length}
                     >
-                      <option value="">-- Choose Time --</option>
-                      {availableTimes.map((time, idx) => (
-                        <option key={idx} value={time}>
-                          {time}
+                      <option value="">Choose a time...</option>
+                      {availableTimes.map((time, index) => (
+                        <option key={index} value={`${time.start}-${time.end}`}>
+                          {time.start} - {time.end}
                         </option>
                       ))}
                     </Form.Select>
-
-                    <p>Available times: {JSON.stringify(availableTimes)}</p>
                   </Form.Group>
                 </Col>
               </Row>
 
               <p className="mt-3">
-                <strong>Selected Appointment:</strong>{" "}
-                {selectedDate.toDateString()} at {selectedTime}
+                <strong>Selected Appointment:</strong> {selectedDate} at{" "}
+                {selectedTime}
               </p>
             </Col>
           </Row>
 
           <div className="text-center mt-4">
-            <Button type="submit" variant="primary" size="lg">
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              disabled={
+                loading || !selectedDoctor || !selectedDate || !selectedTime
+              }
+            >
               Book Appointment
             </Button>
           </div>

@@ -20,35 +20,72 @@ const LoginForm = () => {
   const handleOnSubmit = async (e) => {
     e.preventDefault();
 
-    // axios call
-    const result = await loginUser({
-      email,
-      password,
-    });
-
-    if (result.status === "error") {
-      return toast.error(result.message);
+    // Enhanced validation
+    if (!email?.trim() || !password?.trim()) {
+      toast.error("Please fill in all fields");
+      return;
     }
-    console.log("Login Response:", result.data);
-    toast.success(result.message);
 
-    // Store user details in local storage
-    const { role, name, id } = result.data; // Assuming the API returns "role" and "name"
-    localStorage.setItem("userRole", role);
-    localStorage.setItem("userName", name); // Store the user's name
-    localStorage.setItem("doctorId", id); // Store the doctor's ID
+    try {
+      // Add more detailed logging
+      console.log("Attempting login with:", {
+        email,
+        passwordProvided: !!password,
+      });
 
-    // Redirect based on role
-    if (role === "Doctor") {
-      navigate("/doctor-dashboard");
-    } else if (role === "Patient") {
-      navigate("/patient-dashboard");
-    } else if (role === "Receptionist") {
-      navigate("/receptionist-dashboard");
-    } else if (role === "Admin") {
-      navigate("/admin-dashboard");
-    } else {
-      toast.error("Invalid role. Please contact support.");
+      const result = await loginUser({
+        email,
+        password,
+      });
+
+      // Log complete response
+      console.log("Complete login response:", result);
+
+      // First check for error status
+      if (result.status === "error") {
+        toast.error(result.message);
+        return;
+      }
+
+      // Validate user data
+      if (!result.data?.role) {
+        console.error("Invalid response structure:", result);
+        toast.error("Invalid response from server");
+        return;
+      }
+
+      // Store user data
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+          ...result.data,
+          email,
+        })
+      );
+
+      toast.success("Login successful!");
+
+      // Navigate based on role
+      switch (result.data.role) {
+        case "Doctor":
+          navigate("/doctor-dashboard");
+          break;
+        case "Patient":
+          navigate("/patient-dashboard");
+          break;
+        case "Receptionist":
+          navigate("/receptionist-dashboard");
+          break;
+        case "Admin":
+          navigate("/admin-dashboard");
+          break;
+        default:
+          toast.error("Invalid role assigned");
+          console.error("Unknown role:", result.data.role);
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast.error("Login failed. Please try again.");
     }
   };
 

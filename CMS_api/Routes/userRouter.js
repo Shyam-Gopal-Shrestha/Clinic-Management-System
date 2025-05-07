@@ -4,7 +4,11 @@ import {
   buildSuccessResponse,
   buildErrorResponse,
 } from "../utility/responseHelper.js";
-import User, { findDoctors } from "../Models/userModel.js";
+import User, {
+  findUserByEmail,
+  createUser,
+  findDoctors,
+} from "../Models/userModel.js";
 
 const userRouter = express.Router();
 
@@ -50,44 +54,88 @@ userRouter.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
   try {
+    // Add request logging
+    console.log("Login attempt for:", email);
+
+    // Input validation
+    if (!email || !password) {
+      return buildErrorResponse(res, "Email and password are required");
+    }
+
     const user = await findUserByEmail(email);
+    console.log(
+      "User found:",
+      user ? { role: user.role, id: user._id } : "No user"
+    );
+
     if (!user) {
-      return buildErrorResponse(res, "User not found!!");
+      return buildErrorResponse(res, "Invalid credentials", 401);
     }
 
+    // Validate password
     const isPasswordCorrect = await comparePassword(password, user.password);
+    console.log(
+      "Password validation:",
+      isPasswordCorrect ? "passed" : "failed"
+    );
+
     if (!isPasswordCorrect) {
-      return buildErrorResponse(res, "Invalid credentials!!");
+      return buildErrorResponse(res, "Invalid credentials", 401);
     }
 
-    // if login successful, include user role and other details in the response
+    // Check if user is a doctor and is verified
+    if (user.role === "Doctor" && !user.isVerified) {
+      return buildErrorResponse(res, "Account pending verification", 403);
+    }
+
+    // Prepare user data for response
     const userData = {
-      role: user.role, // Assuming the user object has a 'role' field
-      name: user.name, // Optional: Include other user details if needed
+      id: user._id,
+      name: user.name,
       email: user.email,
-      id: user._id, // Include the user's ID
+      role: user.role,
+      isVerified: user.isVerified,
+      // Add doctorId for doctor role
+      ...(user.role === "Doctor" && { doctorId: user._id }),
     };
 
-    buildSuccessResponse(res, userData, "Login Successful");
+    console.log("Login successful for:", {
+      id: userData.id,
+      name: userData.name,
+      role: userData.role,
+      isVerified: userData.isVerified,
+    });
+
+    return buildSuccessResponse(res, userData, "Login successful");
   } catch (error) {
-    console.log("error during login", error);
-    buildErrorResponse(res, "Failed to login");
+    console.error("Login error:", {
+      message: error.message,
+      stack: error.stack,
+    });
+    return buildErrorResponse(res, "An error occurred during login", 500);
   }
 });
 
 // Get all doctors
 userRouter.get("/doctors", async (req, res) => {
   try {
-    const doctors = await findDoctors();
+    console.log("Fetching doctors...");
+
+    const doctors = await User.find({
+      role: "Doctor",
+      isVerified: true,
+    }).select("-password");
+
+    console.log("Found doctors:", doctors.length);
 
     if (!doctors || doctors.length === 0) {
-      return buildErrorResponse(res, "No doctors found");
+      return buildErrorResponse(res, "No doctors found", 404);
     }
 
-    buildSuccessResponse(res, doctors, "Doctors fetched successfully");
+    return buildSuccessResponse(res, doctors, "Doctors fetched successfully");
   } catch (error) {
-    console.error("Error fetching doctors:", error);
-    buildErrorResponse(res, "Error fetching doctors");
+    console.error("Error in /doctors route:", error);
+    return buildErrorResponse(res, "Failed to fetch doctors", 500);
   }
 });
 
