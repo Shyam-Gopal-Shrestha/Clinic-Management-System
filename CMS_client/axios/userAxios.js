@@ -110,7 +110,8 @@ export const loginUser = async (credentials) => {
     });
 
     // Send POST request to /login
-    const response = await axiosInstance.post("/login", credentials);
+    // const response = await axiosInstance.post("/login", credentials);
+    const response = await axiosInstance.post("/api/users/login", credentials);
 
     const { data } = response;
 
