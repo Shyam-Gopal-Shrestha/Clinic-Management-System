@@ -12,20 +12,8 @@ import availabilityRouter from "./Routes/availabilityRouter.js";
 // Load environment variables
 dotenv.config();
 
-const cors = require("cors");
-const express = require("express");
-const bodyParser = require("body-parser");
-
 const app = express();
 const PORT = process.env.PORT || 8000;
-
-// Configure CORS
-// const corsOptions = {
-//   origin: "http://localhost:5173", // Your React frontend URL
-//   credentials: true,
-//   methods: ["GET", "POST", "PUT", "DELETE"],
-//   allowedHeaders: ["Content-Type", "Authorization"],
-// };
 
 // CORS options for deployment
 const allowedOrigins = [
@@ -42,12 +30,13 @@ app.use(
         callback(new Error("Not allowed by CORS"));
       }
     },
-    credentials: true, // this is required when using cookies or sessions
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
 // Middleware
-// app.use(cors(allowedOrigins));
 app.use(bodyParser.json());
 app.use(express.json());
 
@@ -71,38 +60,19 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok", timestamp: new Date() });
 });
 
-// Start server
-// const startServer = async () => {
-//   try {
-//     await conMongoDb();
-//     await seedAdmin();
-
-//     app.listen(PORT, () => {
-//       console.log(`Server running on http://localhost:${PORT}`);
-//       console.log(
-//         `API Documentation available at http://localhost:${PORT}/api-docs`
-//       );
-//     });
-//   } catch (error) {
-//     console.error("Error starting the server:", error);
-//     process.exit(1);
-//   }
-// };
-
-// deployment code
+// Deployment server startup
 const startServer = async () => {
   try {
     await conMongoDb(); // Establish connection
 
     // Only run seed after ensuring Mongoose is ready
     mongoose.connection.once("open", async () => {
-      console.log("Mongo connection open");
-      await seedAdmin(); // Now safe to seed
+      console.log("MongoDB connected successfully");
+      await seedAdmin(); // Seed admin user after connection is ready
     });
 
-    app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-      console.log(`API Documentation at http://localhost:${PORT}/api-docs`);
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on port ${PORT}`);
     });
   } catch (error) {
     console.error("Error starting the server:", error);
