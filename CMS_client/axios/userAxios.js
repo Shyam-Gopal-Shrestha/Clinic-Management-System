@@ -101,10 +101,15 @@ export const loginUser = async (credentials) => {
 export const fetchDoctors = async () => {
   try {
     const response = await axiosInstance.get("/doctors");
-    return response.data.success ? response.data.data : [];
+    console.log("Doctors response:", response.data);
+
+    if (response.data.success) {
+      return response.data.data;
+    }
+    throw new Error(response.data.message || "Failed to fetch doctors");
   } catch (error) {
     console.error("Error fetching doctors:", error);
-    return [];
+    throw error;
   }
 };
 
