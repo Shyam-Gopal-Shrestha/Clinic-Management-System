@@ -16,12 +16,25 @@ const app = express();
 const PORT = process.env.PORT || 8000;
 
 // Configure CORS
-const corsOptions = {
-  origin: "http://localhost:5173", // Your React frontend URL
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-};
+// const corsOptions = {
+//   origin: "http://localhost:5173", // Your React frontend URL
+//   credentials: true,
+//   methods: ["GET", "POST", "PUT", "DELETE"],
+//   allowedHeaders: ["Content-Type", "Authorization"],
+// };
+
+// CORS options for deployment
+const allowedOrigins = [
+  "http://localhost:5173", // local dev
+  "https://clinic-management-system-eta-olive.vercel.app", // deployed frontend
+];
+
+app.use(
+  cors({
+    origin: allowedOrigins,
+    credentials: true,
+  })
+);
 
 // Middleware
 app.use(cors(corsOptions));
