@@ -12,6 +12,10 @@ import availabilityRouter from "./Routes/availabilityRouter.js";
 // Load environment variables
 dotenv.config();
 
+const cors = require("cors");
+const express = require("express");
+const bodyParser = require("body-parser");
+
 const app = express();
 const PORT = process.env.PORT || 8000;
 
@@ -43,7 +47,7 @@ app.use(
 );
 
 // Middleware
-app.use(cors(allowedOrigins));
+// app.use(cors(allowedOrigins));
 app.use(bodyParser.json());
 app.use(express.json());
 
