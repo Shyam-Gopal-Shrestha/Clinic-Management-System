@@ -12,20 +12,59 @@ const axiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 20000, // 5 second timeout
+  timeout: 20000, // 20 second timeout
 });
 
 // Create user | signup
 export const createUser = async (userObj) => {
   try {
-    const response = await axiosInstance.post("/signup", userObj);
-    return response.data;
-  } catch (error) {
-    console.error("Signup API Error:", error.response?.data || error.message);
+    console.log("Sending signup request:", {
+      ...userObj,
+      password: "[REDACTED]", // Log everything except password
+    });
+
+    const response = await axiosInstance.post("/api/users/signup", userObj);
+    const { data } = response;
+
+    // Validate response format
+    if (!data || typeof data !== "object") {
+      throw new Error("Invalid response format from server");
+    }
+
+    // If signup is successful
+    if (data.success) {
+      return {
+        status: "success",
+        success: true,
+        message: data.message || "Signup successful",
+        data: data.data,
+      };
+    }
+
+    // If signup failed but server returned a message
     return {
       status: "error",
+      success: false,
+      message: data.message || "Signup failed",
+    };
+  } catch (error) {
+    // Enhanced error logging
+    console.error("Signup error:", {
+      name: error.name,
+      message: error.message,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+
+    // Return structured error response
+    return {
+      status: "error",
+      success: false,
       message:
-        error.response?.data?.message || "An error occurred. Please try again.",
+        error.response?.status === 500
+          ? "Server error. Please try again later."
+          : error.response?.data?.message || "Signup failed. Please try again.",
+      errors: error.response?.data?.errors || [],
     };
   }
 };
