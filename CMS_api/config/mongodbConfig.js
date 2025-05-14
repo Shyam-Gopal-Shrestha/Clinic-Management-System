@@ -1,20 +1,50 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 
-// loding .env variables
-dotenv.config();
+// Load environment variables based on NODE_ENV
+if (process.env.NODE_ENV === "production") {
+  dotenv.config();
+} else {
+  dotenv.config({ path: ".env.local" });
+}
 
-// Access MONGO_URL
 const MONGO_URL = process.env.MONGO_URL;
+const NODE_ENV = process.env.NODE_ENV || "development";
 
-console.log("mongoDB url: ", MONGO_URL); // Checking connection url from .env file
+// MongoDB connection options
+const mongoOptions = {
+  serverSelectionTimeoutMS: 5000,
+  socketTimeoutMS: 45000,
+};
 
 const conMongoDb = async () => {
   try {
-    const conn = await mongoose.connect(MONGO_URL);
-    conn && console.log("Mongo Db Connected");
+    const isLocalDb =
+      MONGO_URL.includes("127.0.0.1") || MONGO_URL.includes("localhost");
+    console.log(
+      `🔌 Connecting to MongoDB (${NODE_ENV}):`,
+      isLocalDb ? "Local Database" : "Remote Database"
+    );
+
+    const conn = await mongoose.connect(MONGO_URL, mongoOptions);
+
+    mongoose.connection.on("error", (err) => {
+      console.error("❌ MongoDB connection error:", err);
+    });
+
+    mongoose.connection.on("disconnected", () => {
+      console.warn("⚠️ MongoDB disconnected. Attempting to reconnect...");
+    });
+
+    mongoose.connection.on("reconnected", () => {
+      console.log("✅ MongoDB reconnected successfully");
+    });
+
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
+    return conn;
   } catch (error) {
-    console.log("MongoDB connection error:", error);
+    console.error("❌ MongoDB connection error:", error);
+    process.exit(1);
   }
 };
 
