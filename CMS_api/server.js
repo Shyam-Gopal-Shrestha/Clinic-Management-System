@@ -18,6 +18,7 @@ const PORT = process.env.PORT || 5000;
 // CORS options for deployment
 const allowedOrigins = [
   "http://localhost:5173", // local dev
+  "http://localhost:3000", // alternate local
   "https://clinic-management-system-eta-olive.vercel.app", // deployed frontend
 ];
 
@@ -27,12 +28,15 @@ app.use(
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
+        console.log("Blocked CORS for:", origin); // Debug log
         callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    exposedHeaders: ["Access-Control-Allow-Origin"],
+    maxAge: 86400, // CORS preflight cache for 24 hours
   })
 );
 
