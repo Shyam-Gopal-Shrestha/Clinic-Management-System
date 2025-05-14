@@ -66,6 +66,7 @@ app.get("/health", (req, res) => {
 //   }
 // };
 
+// deployment code
 const startServer = async () => {
   try {
     await conMongoDb(); // Establish connection

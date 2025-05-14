@@ -1,6 +1,9 @@
 import axios from "axios";
 
-const USER_API_URL = "http://localhost:8000/api/users";
+// const USER_API_URL = "http://localhost:8000/api/users";
+
+// Deployment code
+const USER_API_URL = "https://clinic-management-system-mmgx.onrender.com";
 
 // Create axios instance with common config
 const axiosInstance = axios.create({
@@ -27,65 +30,128 @@ export const createUser = async (userObj) => {
   }
 };
 
-// Login user
+// // Login user
+// export const loginUser = async (credentials) => {
+//   try {
+//     // Add request debugging
+//     console.log("Sending login request:", {
+//       url: USER_API_URL + "/login",
+//       email: credentials.email,
+//       hasPassword: !!credentials.password,
+//     });
+
+//     const response = await axiosInstance.post("/login", credentials);
+
+//     // Log full response for debugging
+//     console.log("Full server response:", {
+//       status: response.status,
+//       statusText: response.statusText,
+//       data: response.data,
+//     });
+
+//     // Validate response structure
+//     if (!response.data) {
+//       throw new Error("Invalid response format from server");
+//     }
+
+//     // Handle successful response
+//     if (response.data.success && response.data.data) {
+//       // Store user data in localStorage
+//       localStorage.setItem("user", JSON.stringify(response.data.data));
+
+//       return {
+//         status: "success",
+//         success: true,
+//         data: response.data.data,
+//         message: response.data.message || "Login successful",
+//       };
+//     }
+
+//     // Handle error response with message
+//     return {
+//       status: "error",
+//       success: false,
+//       message: response.data.message || "Login failed",
+//     };
+//   } catch (error) {
+//     // Enhanced error logging
+//     console.error("Login error:", {
+//       name: error.name,
+//       message: error.message,
+//       status: error.response?.status,
+//       statusText: error.response?.statusText,
+//       data: error.response?.data,
+//       config: {
+//         url: error.config?.url,
+//         method: error.config?.method,
+//         headers: error.config?.headers,
+//       },
+//     });
+
+//     // Return structured error response
+//     return {
+//       status: "error",
+//       success: false,
+//       message:
+//         error.response?.status === 500
+//           ? "Server error. Please try again later."
+//           : error.response?.data?.message || "Login failed",
+//     };
+//   }
+// };
+
+// deployment code for login user
 export const loginUser = async (credentials) => {
   try {
-    // Add request debugging
+    // Debugging: Log the request payload (omit password)
     console.log("Sending login request:", {
-      url: USER_API_URL + "/login",
       email: credentials.email,
       hasPassword: !!credentials.password,
     });
 
+    // Send POST request to /login
     const response = await axiosInstance.post("/login", credentials);
 
-    // Log full response for debugging
-    console.log("Full server response:", {
-      status: response.status,
-      statusText: response.statusText,
-      data: response.data,
-    });
+    const { data } = response;
 
-    // Validate response structure
-    if (!response.data) {
+    // Validate response format
+    if (!data || typeof data !== "object") {
       throw new Error("Invalid response format from server");
     }
 
-    // Handle successful response
-    if (response.data.success && response.data.data) {
+    const { success, message, data: userData } = data;
+
+    if (success && userData) {
       // Store user data in localStorage
-      localStorage.setItem("user", JSON.stringify(response.data.data));
+      localStorage.setItem("user", JSON.stringify(userData));
 
       return {
         status: "success",
         success: true,
-        data: response.data.data,
-        message: response.data.message || "Login successful",
+        data: userData,
+        message: message || "Login successful",
       };
     }
 
-    // Handle error response with message
+    // Handle failed login attempt
     return {
       status: "error",
       success: false,
-      message: response.data.message || "Login failed",
+      message: message || "Login failed",
     };
   } catch (error) {
-    // Enhanced error logging
-    console.error("Login error:", {
+    const errorDetails = {
       name: error.name,
       message: error.message,
       status: error.response?.status,
       statusText: error.response?.statusText,
       data: error.response?.data,
-      config: {
-        url: error.config?.url,
-        method: error.config?.method,
-        headers: error.config?.headers,
-      },
-    });
+      url: error.config?.url,
+      method: error.config?.method,
+    };
 
-    // Return structured error response
+    console.error("Login error:", errorDetails);
+
     return {
       status: "error",
       success: false,
