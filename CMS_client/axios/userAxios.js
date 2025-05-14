@@ -23,6 +23,7 @@ export const createUser = async (userObj) => {
       password: "[REDACTED]", // Log everything except password
     });
 
+    // Fix: Use the complete endpoint path
     const response = await axiosInstance.post("/api/users/signup", userObj);
     const { data } = response;
 
@@ -61,7 +62,9 @@ export const createUser = async (userObj) => {
       status: "error",
       success: false,
       message:
-        error.response?.status === 500
+        error.response?.status === 404
+          ? "Signup endpoint not found. Please check the API URL."
+          : error.response?.status === 500
           ? "Server error. Please try again later."
           : error.response?.data?.message || "Signup failed. Please try again.",
       errors: error.response?.data?.errors || [],
