@@ -12,7 +12,7 @@ const axiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 5000, // 5 second timeout
+  timeout: 20000, // 5 second timeout
 });
 
 // Create user | signup
