@@ -37,7 +37,7 @@ app.use(
 );
 
 // Middleware
-app.use(cors(corsOptions));
+app.use(cors(allowedOrigins));
 app.use(bodyParser.json());
 app.use(express.json());
 
