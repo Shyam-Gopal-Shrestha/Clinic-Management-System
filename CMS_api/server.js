@@ -48,16 +48,36 @@ app.get("/health", (req, res) => {
 });
 
 // Start server
+// const startServer = async () => {
+//   try {
+//     await conMongoDb();
+//     await seedAdmin();
+
+//     app.listen(PORT, () => {
+//       console.log(`Server running on http://localhost:${PORT}`);
+//       console.log(
+//         `API Documentation available at http://localhost:${PORT}/api-docs`
+//       );
+//     });
+//   } catch (error) {
+//     console.error("Error starting the server:", error);
+//     process.exit(1);
+//   }
+// };
+
 const startServer = async () => {
   try {
-    await conMongoDb();
-    await seedAdmin();
+    await conMongoDb(); // Establish connection
+
+    // Only run seed after ensuring Mongoose is ready
+    mongoose.connection.once("open", async () => {
+      console.log("Mongo connection open");
+      await seedAdmin(); // Now safe to seed
+    });
 
     app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
-      console.log(
-        `API Documentation available at http://localhost:${PORT}/api-docs`
-      );
+      console.log(`API Documentation at http://localhost:${PORT}/api-docs`);
     });
   } catch (error) {
     console.error("Error starting the server:", error);
