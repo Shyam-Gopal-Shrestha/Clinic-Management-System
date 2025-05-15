@@ -116,6 +116,23 @@ userRouter.post("/login", async (req, res) => {
   }
 });
 
+// Logout route
+userRouter.post("/logout", async (req, res) => {
+  try {
+    // Clear any server-side session/tokens if needed
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error during logout",
+      error: error.message,
+    });
+  }
+});
+
 // Get all doctors
 userRouter.get("/doctors", async (req, res) => {
   try {

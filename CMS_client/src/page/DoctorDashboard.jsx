@@ -11,14 +11,19 @@ import {
   Button,
   Dropdown,
   Form,
+  Alert,
 } from "react-bootstrap";
 import axios from "axios";
 import {
   handleAddAvailability,
   fetchDoctorAvailability,
 } from "../../axios/availabilityAxios";
+import { logoutUser } from "../../axios/userAxios";
+import { useNavigate } from "react-router-dom";
 
 function DoctorDashboard() {
+  const navigate = useNavigate();
+  const [error, setError] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [availability, setAvailability] = useState([]);
   const [newAvailability, setNewAvailability] = useState({
@@ -27,8 +32,6 @@ function DoctorDashboard() {
     end: "",
   });
   const [userName, setUserName] = useState("");
-
-  // Add doctorId to state
   const [doctorId, setDoctorId] = useState(null);
 
   // Time slots options (every 30 minutes)
@@ -115,14 +118,35 @@ function DoctorDashboard() {
     }
   };
 
-  // Add logout handler
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    window.location.href = "/login";
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      const response = await logoutUser();
+      if (response.success) {
+        localStorage.removeItem("user");
+        navigate("/", { replace: true });
+      } else {
+        setError("Logout failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      localStorage.removeItem("user");
+      navigate("/", { replace: true });
+    }
   };
 
   return (
     <div className="vh-100 d-flex flex-column">
+      {error && (
+        <Alert
+          variant="danger"
+          dismissible
+          onClose={() => setError("")}
+          className="m-2"
+        >
+          {error}
+        </Alert>
+      )}
       {/* Header */}
       <header
         className="d-flex align-items-center px-3"

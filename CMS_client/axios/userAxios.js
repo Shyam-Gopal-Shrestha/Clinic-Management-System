@@ -139,9 +139,35 @@ export const fetchDoctors = async () => {
 };
 
 // Logout user
-export const logoutUser = () => {
-  localStorage.removeItem("user");
-  return { status: "success", message: "Logged out successfully" };
+export const logoutUser = async () => {
+  try {
+    // Call backend logout endpoint to clear session/cookies
+    await axiosInstance.post("/api/users/logout");
+
+    // Clear local storage
+    localStorage.removeItem("user");
+
+    return {
+      status: "success",
+      success: true,
+      message: "Logged out successfully",
+    };
+  } catch (error) {
+    console.error("Logout error:", {
+      name: error.name,
+      message: error.message,
+      status: error.response?.status,
+    });
+
+    // Even if server logout fails, clear local storage
+    localStorage.removeItem("user");
+
+    return {
+      status: "error",
+      success: true, // Still consider it successful since user is logged out locally
+      message: "Logged out with warnings. Some cleanup may have failed.",
+    };
+  }
 };
 
 // Check if user is logged in

@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import logo from "../assets/logo.png";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import { FaBell } from "react-icons/fa"; // Import the notification icon
+import { FaBell } from "react-icons/fa";
 import { Link } from "react-router-dom";
+import { logoutUser } from "../../axios/userAxios";
 
 import {
   Container,
@@ -14,14 +15,40 @@ import {
   ListGroup,
   Button,
   Dropdown,
+  Alert,
 } from "react-bootstrap";
 
 function Dashboard() {
+  const navigate = useNavigate();
   const [date, setDate] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [error, setError] = useState("");
+
+  // Handle logout
+  const handleLogout = async () => {
+    try {
+      const response = await logoutUser();
+      if (response.success) {
+        localStorage.removeItem("user");
+        navigate("/");
+      } else {
+        setError("Logout failed. Please try again.");
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      localStorage.removeItem("user");
+      navigate("/");
+    }
+  };
 
   return (
     <div className="vh-100 d-flex flex-column">
+      {error && (
+        <Alert variant="danger" dismissible onClose={() => setError("")}>
+          {error}
+        </Alert>
+      )}
+
       {/* Header */}
       <header
         className="d-flex align-items-center px-3"
@@ -53,8 +80,10 @@ function Dashboard() {
                   Profile
                 </Dropdown.Toggle>
                 <Dropdown.Menu>
-                  <Dropdown.Item href="#">Update Profile</Dropdown.Item>
-                  <Dropdown.Item href="#">Logout</Dropdown.Item>
+                  <Dropdown.Item as={Link} to="/profile">
+                    Update Profile
+                  </Dropdown.Item>
+                  <Dropdown.Item onClick={handleLogout}>Logout</Dropdown.Item>
                 </Dropdown.Menu>
               </Dropdown>
             </Nav>
